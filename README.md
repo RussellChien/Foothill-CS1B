@@ -1,2 +1,2 @@
 # Foothill-CS1B
-Repository for Foothill College course CS1B
+Labs for CS1B: Intermediate Software Design in Java. 
