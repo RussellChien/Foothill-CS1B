@@ -1,0 +1,445 @@
+/* 
+-------------------------------------------------------------------------------------------------------------------------
+
+@version1.0 07-18-20
+
+@author Russell Chien
+
+File name: CreditCardTransactionAnalyzer.java
+
+Program purpose: This program analyzes a customer's credit card transactions by reading them in from a file. 
+				 It provides info on each type of transaction, the date, the amount, and more specific 
+				 information depending on the type of transaction. It also calculates reward points from
+				 department store and grocery transactions and charges from bank transacions. 
+
+Revision history:
+
+Date     Programmer    Change ID Description
+
+07-18-20 Russell Chien 0001      Initial implementation
+
+ --------------------------------------------------------------------------------------------------------------------------------
+*/
+public class CreditCardTransactionAnalyzer {
+	public static void main (String [] args) {
+		Customer customer = new Customer("Bob Jones", "4321777789654081", 2000.50, 200); 
+		customer.readTransactions();
+		customer.reportTransactions();
+		customer.reportCharges();
+		customer.reportRewardSummary();
+	}
+}
+
+public class Date implements Comparable<Date>, Cloneable {
+	private int month, day, year; 
+
+	public Date() {
+		month = 1;
+		day = 1; 
+		year = 1970;
+	}
+
+	public Date(int month, int day, int year) {
+		if (month >= 1 && month <= 12) this.month = month;
+		if (day >= 1 && day <= 31) this.day = day;
+		if (year >= 1970) this.year = year;
+	}
+
+	public Date(Date date) {
+		this.month = date.month;
+		this.day = date.day;
+		this.year = date.year;
+	}
+
+	public int getMonth() { return month; }
+
+	public void setMonth(int month) { this.month = month; }
+
+	public int getDay() { return day; }
+
+	public void setDay(int day) { this.day = day; }
+
+	public int getYear() { return year; }
+
+	public void setYear(int year) { this.year = year; }
+
+	public String toString() {
+		return String.format("%02d/%02d/%04d", month, day, year);
+	}
+
+	public boolean equals(Object other) {
+		if (other == null || !(other instanceof Date)) { return false; }
+		Date date = (Date) other;
+		return this.month == date.month && this.day == date.day && this.year == date.year;
+	}
+
+	public Date clone() throws CloneNotSupportedException {
+		Date cloned = (Date) super.clone();
+		return cloned;
+	}
+
+	public int compareTo(Date other) {
+		if (this == null && other == null) {
+			return 0;
+		} else if (this == null) {
+        	return 1;
+      	} else if (other == null) {
+        	return -1;
+      	}
+		if (other.year > year) {
+			return 1;
+		} else if (other.year < year) {
+			return -1;
+		} else {
+			if (other.month > month) {
+				return 1;
+			} else if (other.month < month) {
+				return -1;
+			} else {
+				if(other.day > day) {
+					return 1;
+				} else if (other.day < day) {
+					return -1;
+				} else {
+					return 0;
+				}
+			}
+		}
+	}
+}
+
+public abstract class Transaction implements Comparable<Transaction> {
+	protected int transactionID;
+	protected Date date;
+	protected double transactionAmount;
+
+	public Transaction() {
+		this.transactionID = 0;
+		this.date = new Date();
+		this.transactionAmount = 0.0;
+	}
+
+	public Transaction(int transactionID, int month, int day, int year, double transactionAmount) {
+		this.transactionID = transactionID;
+		this.date = new Date(month, day, year);
+		this.transactionAmount = transactionAmount;
+	}
+
+	public Transaction(int transactionID, Date date, double transactionAmount) {
+		this.transactionID = transactionID;
+		try {
+			this.date = date.clone();
+		} catch (CloneNotSupportedException e) {
+			this.date = new Date();
+		}
+		this.transactionAmount = transactionAmount;
+	}
+
+	public abstract void list();
+
+	public String toString() {
+		return date + "~" + transactionID + "~" + transactionAmount;
+	}
+
+	public int getTransactionID() { return transactionID; }
+
+	public void setTransactionID(int transactionID) { this.transactionID = transactionID; }
+
+	public Date getDate() { return date; }
+
+	public void setDate(Date date) throws CloneNotSupportedException { this.date = date.clone(); }
+
+	public double getTransactionAmount() { return transactionAmount; }
+
+	public void setTransactionAmount(double transactionAmount) { this.transactionAmount = transactionAmount; }
+
+	public boolean equals(Object other) {
+		if (other == null || !(other instanceof Transaction)) { return false; }
+		Transaction transaction = (Transaction) other;
+		return transaction.transactionID == this.transactionID;
+	}
+
+	public int compareTo(Transaction other) {
+		if (this == null && other == null) {
+			return 0;
+		} else if (this == null) {
+        	return 1;
+      	} else if (other == null) {
+        	return -1;
+      	}
+		if (other.equals(this)) {
+			return 0;
+		} else if (this.transactionID > other.transactionID) {
+			return 1;
+		} else {
+			return -1;
+		}
+	}
+}
+
+public class DepartmentStoreTransaction extends Transaction implements Rewardable {
+	private String departmentName;
+	private int returnPolicy;
+
+	public DepartmentStoreTransaction() {
+		super();
+		this.departmentName = "none";
+		this.returnPolicy = 0;
+	}
+
+	public DepartmentStoreTransaction(int transactionID, int month, int day, int year, double transactionAmount, String departmentName, int returnPolicy) {
+		super(transactionID, month, day, year, transactionAmount);
+		this.departmentName = departmentName;
+		this.returnPolicy = returnPolicy; 
+	}
+
+	public DepartmentStoreTransaction(int transactionID, Date date, double transactionAmount, String departmentName, int returnPolicy) {
+		super(transactionID, date, transactionAmount);
+		this.departmentName = departmentName;
+		this.returnPolicy = returnPolicy;
+	}	
+
+	public String getDepartmentName() { return departmentName; }
+
+	public void setDepartmentName(String departmentName) { this.departmentName = departmentName; }
+
+	public int getReturnPolicy() { return returnPolicy; }
+
+	public void setReturnPolicy(int returnPolicy) { this.returnPolicy = returnPolicy; }
+
+	public String toString() {
+		return "Department Store~" + super.toString() + "~" + departmentName + "~" + returnPolicy;
+	}
+
+	public void list() {
+		System.out.println(date + "\tDepartment Store\t" + departmentName + "\t" + transactionAmount + "\tReturn in " + returnPolicy + " days");
+	}
+
+	public double earnPoints() {
+		return transactionAmount * 3;
+	}
+}
+
+public class BankingTransaction extends Transaction {
+	private String type;
+	private double charge;
+
+	public BankingTransaction() {
+		super();
+		this.type = "none";
+		this.charge = 0;
+	}
+
+	public BankingTransaction(int transactionID, int month, int day, int year, double transactionAmount, String type, double charge) {
+		super(transactionID, month, day, year, transactionAmount);
+		this.type = type;
+		this.charge = charge; 
+	}
+
+	public BankingTransaction(int transactionID, Date date, double transactionAmount, String type, double charge) {
+		super(transactionID, date, transactionAmount);
+		this.type = type;
+		this.charge = charge; 
+	}
+
+	public String getType() { return type; }
+
+	public void setType(String type) { this.type = type; }	
+
+	public double getCharge() { return charge; } 
+
+	public void setCharge(double charge) { this.charge = charge; }
+	
+	public String toString() {
+		double totalAmount = charge + transactionAmount;
+		return "Bank~" + super.toString() + "~" + type + "~" + totalAmount; 
+	}
+
+	public void list() {
+		double totalAmount = charge + transactionAmount;
+		System.out.println(date + "\tBank\t\t\t" + type + "\t" + totalAmount);
+	}
+}
+
+public class GroceryTransaction extends Transaction implements Rewardable {
+	private String storeName;
+
+	public GroceryTransaction() {
+		super();
+		this.storeName = "none";
+	}
+
+	public GroceryTransaction(int transactionID, int month, int day, int year, double transactionAmount, String storeName) {
+		super(transactionID, month, day, year, transactionAmount);
+		this.storeName = storeName;
+	}
+
+	public GroceryTransaction(int transactionID, Date date, double transactionAmount, String storeName) {
+		super(transactionID, date, transactionAmount);
+		this.storeName = storeName;
+	}
+
+	public String getStoreName() { return storeName; } 
+
+	public void setStoreName(String storeName) { this.storeName = storeName; }
+
+	public String toString() {
+		return "Grocery~" + super.toString() + "~" + storeName;
+	}
+
+	public void list() {
+		System.out.println(date + "\tGrocery\t\t\t" + storeName + "\t" + transactionAmount);
+	}
+
+	public double earnPoints() {
+		return transactionAmount * 5; 
+	}
+}
+
+public interface Rewardable {
+	double earnPoints();
+}
+
+import java.io.*;
+import java.nio.file.*;
+import java.nio.charset.*;
+import java.util.Arrays;
+import java.util.Comparator;
+
+public class Customer {
+	private static final int MAX_SIZE = 1024;
+	private static final String INPUT_FILE_LOCATION = "/Users/Russell/Desktop/Code/Java/CS1B/assignment_2/transactions.txt" ;
+
+	private String name;
+	private String creditCardNumber;
+	private double balance;
+	private double pointBalance;
+	private Transaction[] transactions;
+	private Rewardable[] rewardables; 
+
+	public Customer() {
+		this.name = "John Doe";
+		this.creditCardNumber = "1111222233334444";
+		this.balance = 0.0;
+		this.pointBalance = 1000.0; 
+		transactions = new Transaction[MAX_SIZE];
+		rewardables = new Rewardable[MAX_SIZE];
+	}
+
+	public Customer(String name, String creditCardNumber, double balance, double pointBalance) {
+		this.name = name;
+		this.creditCardNumber = creditCardNumber;
+		this.balance = balance;
+		this.pointBalance = pointBalance;
+		transactions = new Transaction[MAX_SIZE];
+		rewardables = new Rewardable[MAX_SIZE];
+	}
+
+	public void readTransactions() {
+		 Path inputFilePath = Paths.get(INPUT_FILE_LOCATION);          
+         BufferedReader reader = null;
+         String line = null;
+         int index = 0;
+         System.out.println("\t\t\tTRANSACTION LISTING REPORT");
+         try {
+            reader = Files.newBufferedReader(inputFilePath, StandardCharsets.US_ASCII);
+                while ((line = reader.readLine()) != null) {
+                    String[] tokens = line.split("~");
+                    String dateString = tokens[1];
+                    String[] dateTokens = dateString.split("/");
+                    int month = Integer.parseInt(dateTokens[0]);
+                    int day = Integer.parseInt(dateTokens[1]);
+                    int year = Integer.parseInt(dateTokens[2]);
+                    Date date = new Date(month, day, year);
+                    if (tokens[0].equals("BK")) {
+                    	BankingTransaction bankingTransaction = new BankingTransaction(Integer.parseInt(tokens[2]), date, Double.parseDouble(tokens[3]), tokens[4], Double.parseDouble(tokens[5]));
+                    	transactions[index] = bankingTransaction;
+                    } else if (tokens[0].equals("GR")) {
+                    	GroceryTransaction groceryTransaction = new GroceryTransaction(Integer.parseInt(tokens[2]), date, Double.parseDouble(tokens[3]), tokens[4]);
+                    	transactions[index] = groceryTransaction;
+                    } else if (tokens[0].equals("DS")) {
+                    	DepartmentStoreTransaction departmentStoreTransaction = new DepartmentStoreTransaction(Integer.parseInt(tokens[2]), date, Double.parseDouble(tokens[3]), tokens[4], Integer.parseInt(tokens[5]));
+                    	transactions[index] = departmentStoreTransaction;
+                    }
+                    index++;
+                }
+                reader.close();
+        } catch (IOException e )  {  
+            e.printStackTrace ();
+        }
+    	Arrays.sort(transactions, Customer.TransactionComparator);
+        index = 0;
+        for (Transaction transaction : transactions) {
+            if (transaction instanceof Rewardable) {
+            	rewardables[index] = (Rewardable) transaction;
+            }
+            index++;
+        }
+    }
+
+	public void reportTransactions() {
+		for (Transaction transaction : transactions) {
+			if (transaction == null) { break; }
+			else { transaction.list(); }
+		}
+	}
+
+	public void reportCharges() {
+		double charge = 0;
+		for (Transaction transaction : transactions) {
+			if (transaction instanceof BankingTransaction) {
+				BankingTransaction bankTransaction = (BankingTransaction) transaction; 
+				charge += bankTransaction.getCharge();
+			}
+		}
+		System.out.println("Total Charges: " + charge);
+	}
+
+	public void reportRewardSummary() {
+		System.out.println("Reward Summary for " + name + " " + creditCardNumber.substring(12));
+		double departmentStorePoints = 0;
+		double groceryStorePoints = 0;
+		for (Rewardable transaction : rewardables) {
+			if (transaction instanceof GroceryTransaction) {
+				GroceryTransaction groceryTransaction = (GroceryTransaction) transaction;
+				groceryStorePoints += groceryTransaction.earnPoints();
+			} else if (transaction instanceof DepartmentStoreTransaction) {
+				DepartmentStoreTransaction departmentStoreTransaction = (DepartmentStoreTransaction) transaction;
+				departmentStorePoints += departmentStoreTransaction.earnPoints();
+			}
+		}
+		System.out.println("Previous points balance\t\t\t\t" + pointBalance); 
+		pointBalance += groceryStorePoints;
+		pointBalance += departmentStorePoints; 
+		System.out.println("+ Points earned on Department store purchases:\t" + departmentStorePoints);
+		System.out.println("+ Points earned on Grocery Store purchases:\t" + groceryStorePoints); 
+		System.out.println("----------------------------------------------------------------------------------");
+		System.out.println("=  Total points available for redemption\t" + pointBalance);
+	}
+
+	public static Comparator<Transaction> TransactionComparator = new Comparator<Transaction>() {
+    public int compare(Transaction transaction, Transaction otherTransaction) {
+      if (transaction == null && otherTransaction == null) {
+        return 0;
+      } else if (transaction == null) {
+        return 1;
+      } else if (otherTransaction == null) {
+        return -1;
+      } else {
+        return (int) transaction.getTransactionAmount() - (int) otherTransaction.getTransactionAmount();
+      }
+    }
+  };
+}
+
+/*
+transactions.txt
+DS~04/23/2020~1111~25.67~Macys~60
+BK~03/12/2020~2222~300.0~ATM~6.00
+GR~04/20/2020~4444~57.95~Lucky
+BK~05/01/2020~5555~100.0~CASH~4.00
+GR~04/21/2020~6666~17.39~Safeway
+DS~04/01/2020~7777~211.67~Sears~90
+GR~05/30/2020~8888~45.87~Costco
+DS~02/10/2020~9999~67.54~Uniqlo~50
+*/
